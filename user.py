@@ -1,7 +1,7 @@
 from datetime import date
 import csv
 import food
-class User():
+class User:
 
     def __init__(self,mail=''):
         self.email_id = mail
@@ -9,9 +9,6 @@ class User():
         self.order_list = []
         self.ac = 0
         self.tmp = []
-        
-
-
 
         with open("user_list.csv",'r', newline="") as us:
             re = csv.reader(us)
@@ -38,7 +35,7 @@ class User():
                 
                 #print(self.user)
                 return False
-            except:
+            except ValueError:
                 print("Invalid Input")
 
     def ph_no(self):
@@ -54,14 +51,16 @@ class User():
                                     print("Entered Phone Number Already Present")
                                     break
                         else:
-                            return ph_no
                             flag = False
+                            return ph_no
+
                     else:
-                        return ph_no
                         flag = False
+                        return ph_no
+
                 else:
                     print("Enter in a digit format... \nOnly 10 Number are allowed...")
-            except:
+            except TypeError:
                 print("Invalid Input.....")
             
 
@@ -77,11 +76,11 @@ class User():
                                 break
                     else:
                         return email_id
-                        break
+
                 else:
                     return email_id
-                    break
-            except:
+
+            except ValueError:
                 print("Invalid Input...!!!!")
 
     def update_profile(self):
@@ -125,60 +124,97 @@ class User():
                     ab = csv.writer(open("user_list.csv",'w', newline=""))
                     ab.writerows(self.user)
                     return False
-            except:
+            except ValueError:
                 print("Invalid Input..!!!")
 
-    def show_items(self):
-        a = food.Food()
-        a.view_food()
+    def what(self,iid):
+        ab = csv.reader(open('food_list.csv','r'))
+        nme = []
+        for row in ab:
+            if row:
+                if str(row[0]).lower()==iid.lower():
+                    nme.append(str(row[1]))
+                    p = row[3].split(' ')
+                    nme.append(p[1])
+        #print(''.join(nme))
+        return str(('    '.center(15)).join(nme))
+
 
     def order_history(self):
+        print('-'*60)
+        print("Food Order History !".center(60))
+        print('-'*60)
+        fl = False
+        fst = 1
+        ak = csv.reader(open('order_list.csv','r'))
+        for row in ak:
+            if row:
+                if row[0]==self.email_id:
+                    fl = True
+                    c = row[1:]
+                    for e in c:
+                        p = 0
+                        nw = e.split('@')
+                        datee = nw[1]
+                        ites = nw[0].split('~')
+                        print("On ",datee,"You have tasted...")
+                        for f in ites:
+                            if f:
+                                a = self.what(f)
+                                print("      --> ",f,a,sep='   ')
+                                aspp = a.split(' ')
+                                p+=int(aspp[-1])
+                        print("        Total Bil --> ".center(40),p) if p>0 else ''
 
-            if not self.ac:
-                print('No curren orders')
-                ck = 0
-                abc = csv.reader(open('order_list.csv','r'))
-                for r in abc:
-                    if r:
-                        ck = 1
-                        print(r)
-                if not ck:
-                    print('No order history')
-                return True
-            elif self.ac:
-                print("Order History Of:", self.email_id)
-                f_id = ''
-                ff_id = []
-                now_date = date.today()
-                for a in self.tmp:
-                    #print(a)
-                    for e in a:
-                        f_id += str(e[0])
-                        f_id += '~'
-                        break
-                self.tmp = ''
-                ff_id.append(str(f_id+'@'+str(now_date)))
-                rac = ''.join(ff_id)
-                ak ,ap = [] , 0
-                ag = csv.reader(open('order_list.csv','r'))
-                
-                for row in ag:
-                    if row:
-                        if row[0]==self.email_id:
-                            
-                            row.append(str(rac))
-                            ak.append(row)
-                            ap = 1
 
-                if ap==0:
-                    ak.append(self.email_id)
-                    ak.append(str(rac))
-             
-                done = csv.writer(open('order_list.csv','w',newline=''))
-                done.writerows(ak)
+        if not fl:
+            print('No past order history!!..Order food')
+
+        return True
+
+
+
+    def idc(self,ao):
+        now = str(date.today())
+        oid = []
+        for e in ao:
+            if e:
+                oid.append(str(e[0]+'~'))
+        oid.append(str('@'+now))
+        #print("final oid",''.join(oid))
+        return str(''.join(oid))
+
+
+    def write(self):
+        ae = self.tmp
+        ap = True
+        ooid = self.idc(ae)
+        ab = []
+        ak = csv.reader(open('order_list.csv','r'))
+        for row in ak:
+            if row:
+                if row[0]==self.email_id:
+                    ap = False
+                    #self.order_history()
+                    row.append(ooid)
+                    ab.append(row)
+                else:
+                    ab.append(row)
+
+        if ap:
+            ab = [[self.email_id , ooid]]
+
+        final = csv.writer(open('order_list.csv','w',newline=''))
+        #print(final,"writing/...")
+        final.writerows(ab)
+
+        self.tmp=[]
+
+
 
     def place_order(self):
-        self.show_items()
+        a = food.Food()
+        a.view_food()
         now = []
         while True:
             try:
@@ -188,14 +224,15 @@ class User():
                         if j == int(i[0]):
                             now.append(i)
                 break
-            except:
+            except TypeError:
                 print("Invalid Order ID..!!!")
+
         print("Order Placed Successfully...!!!!")
         self.ac=1
+        self.tmp=[]
         self.tmp = now
-        self.order_history()
-
-
+        self.write()
+        self.tmp = []
 
     def user_menu(self):
         flag = True
@@ -203,12 +240,14 @@ class User():
             try:
                 self.choice = int(input("\nPress 1 To View Food Menu \nPress 2 To Place New Order \nPress 3 To Order History \nPress 4 To Update Profile \nPress 0 To Exit"))
                 if self.choice == 1:
-                    self.show_items()
+                    a = food.Food()
+                    a.view_food()
                 elif self.choice == 2:
                     dee = self.place_order()
-                    self.ac = 1 if de else 0
+                    self.ac = 1 if dee else 0
                 elif self.choice == 3:
                     self.order_history()
+
                 elif self.choice == 4:
                     self.update_profile()
                 elif self.choice == 0:
@@ -220,6 +259,8 @@ class User():
 
 
 
-    
+
+
+
 
 
